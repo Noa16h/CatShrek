@@ -1,7 +1,8 @@
-import os;
-import time;
-import cv2;
-import numpy as np;
+import os
+import time
+import cv2
+import datetime
+import numpy as np
 
 class RingBuffer:
     """ class that implements a not-yet-full buffer """
@@ -30,8 +31,51 @@ class RingBuffer:
         return self.data
 
 
+def capture(cap):
+    cap = cv2.VideoCapture(0)
+    cap.set(cv2.CAP_PROP_FPS, 30)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080) 
+    cap.read()
+
+    # Check if camera opened successfully
+    if (cap.isOpened() == False): 
+        print("Unable to read camera feed")
+    
+    # Default resolutions of the frame are obtained.The default resolutions are system dependent.
+    # We convert the resolutions from float to integer.
+    frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    print("Auflösung: "+ str(frame_width)+ " X "+ str(frame_height)) 
+    # Define the codec and create VideoWriter object.The output is stored in 'outpy.avi' file.
+    fourcc = cv2.VideoWriter_fourcc(*'MP4V')
+    name = '{date:%d-%m-%Y_%H.%M.%S}.mp4'.format( date=datetime.datetime.now() )
+    print(name)
+    out = cv2.VideoWriter(name, fourcc, 30.0, (frame_width,frame_height))
+    millis = int(round(time.time()))
+    print(millis)
+    millis +=10
+    print(millis)
+    while int(round(time.time()))<millis:
+        ret, frame = cap.read()
+        
+        if ret == True: 
+            
+            # Write the frame into the file 'output.avi'
+            out.write(frame)
+            # Break the loopq
+        
+    millis = int(round(time.time()))
+    print(millis)
+    # When everything done, release the video capture and video write objects
+    out.release()
+    cap.release()
+
 
 video = cv2.VideoCapture(0)
+video.set(cv2.CAP_PROP_FPS, 10)
+video.set(cv2.CAP_PROP_FRAME_WIDTH, 400)
+video.set(cv2.CAP_PROP_FRAME_HEIGHT, 300)
 
 # Setup SimpleBlobDetector parameters.
 params = cv2.SimpleBlobDetector_Params()
@@ -46,7 +90,7 @@ params.blobColor = 255
 
 # Filter by Area.
 params.filterByArea = True
-params.minArea = 100
+params.minArea = 50
 params.maxArea = 1500
 
 # Filter by Circularity
@@ -98,6 +142,13 @@ while True:
     keypoints = detector.detect(im)
     if len(keypoints)!= 0:
        print("detected")
+       video.release()
+       capture(video)
+       video = cv2.VideoCapture(0)
+       video.set(cv2.CAP_PROP_FPS, 10)
+       video.set(cv2.CAP_PROP_FRAME_WIDTH, 400)
+       video.set(cv2.CAP_PROP_FRAME_HEIGHT, 300)
+       _,lastFrame = video.read()
 
     im_with_keypoints = cv2.drawKeypoints(im, keypoints, np.array([]),(255,0,0),cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
 
